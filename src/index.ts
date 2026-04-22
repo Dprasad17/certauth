@@ -17,6 +17,11 @@ app.use('/api', authRoutes);
 
 // ARCHITECTURAL FIX: Listen on all interfaces (IPv4) for Cloud Deployment
 // Binding to 0.0.0.0 allows Render to route external traffic to this container
+
+// Health Check Route
+app.get('/', (req, res) => {
+  res.send('CertAuth API is running perfectly! 🚀');
+});
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🚀 Server is broadcast-ready (Cloud/0.0.0.0)!`);
   console.log(`Port: ${PORT}`);
