@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String                  @id @default(uuid())
+  email         String                  @unique
+  authenticators Authenticator[]
+  certificates  BlockchainCertificate[]
+  createdAt     DateTime                @default(now())
+}
+
+model Authenticator {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  label     String?
+  secret    String?
+  issuer    String?
+  uri       String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, issuer])
+}
+
+model BlockchainCertificate {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+  blockchainId String?
+  content      String?
+  createdAt    DateTime @default(now())
+}
