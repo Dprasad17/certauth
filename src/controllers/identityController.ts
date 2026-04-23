@@ -1,13 +1,13 @@
 import type { Request, Response } from 'express';
 import prisma from '../lib/prisma.js';
 import { encryptSecret, decryptSecret } from '../utils/encryption.js';
+import type { AuthRequest } from '../lib/authMiddleware.js';
 
 /**
  * Syncs identity data from mobile app to backend.
- * Refactored for Multi-Identity Relational Vault.
  * POST /api/identity/sync
  */
-export const syncIdentity = async (req: Request, res: Response) => {
+export const syncIdentity = async (req: AuthRequest, res: Response) => {
     const {
         blockchainId,
         content,
@@ -16,30 +16,33 @@ export const syncIdentity = async (req: Request, res: Response) => {
         issuer
     } = req.body;
 
-    // VALIDATION HARDENING: Prevent 'Unnamed' ghost records but allow Certificates
-    const isTotpSync = totpSecret && totpSecret.length > 0 && !blockchainId;
-    if (isTotpSync && (!req.body.uri || req.body.uri === '')) {
-        return res.status(400).json({ error: 'Sync Failed: Missing required URI for TOTP enrollment' });
+    // The userId is now provided by the authenticateToken middleware
+    const userId = req.user?.id;
+
+    if (!userId) {
+        return res.status(401).json({ error: 'User context missing' });
     }
 
-    // ARCHITECTURAL HARD-ANCHOR: Strictly use primary email identity
-    const PRIMARY_EMAIL = 'durgacit1704@gmail.com';
-    const emailToUse = PRIMARY_EMAIL;
+    // VALIDATION: Prevent 'Unnamed' ghost records for TOTP
+    const isTotpSync = totpSecret && totpSecret.length > 0 && !blockchainId;
+    if (isTotpSync && (!req.body.uri || req.body.uri === '')) {
+        return res.status(400).json({ error: 'Sync Failed: Missing required URI for TOTP' });
+    }
 
     try {
-        // 1. Enforce Primary User (Unified Anchor)
-        const user = await prisma.user.upsert({
-            where: { email: emailToUse },
-            update: {},
-            create: { email: emailToUse },
+        // 1. Verify User Exists (should always be true if JWT is valid)
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
         });
 
-        // 2. Handle TOTP Authenticator (Auto-mapping)
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // 2. Handle TOTP Authenticator
         if (totpSecret) {
-            // Priority: Explicit issuer -> Parsed from URI -> URI Path Fallback
             let finalIssuer = issuer;
             if ((!finalIssuer || finalIssuer === 'Unknown') && req.body.uri) {
-                // Improved extraction: checks query param first, then the string between totp/ and :
                 finalIssuer = req.body.uri.match(/issuer=([^&]+)/)?.[1] ||
                     req.body.uri.match(/totp\/([^:]+):/)?.[1] ||
                     'Digital Identity';
@@ -65,12 +68,12 @@ export const syncIdentity = async (req: Request, res: Response) => {
                     uri: req.body.uri || '',
                 },
             });
-            console.log(`[Sync] Authenticator linked to primary identity: ${emailToUse} (Issuer: ${finalIssuer})`);
+            console.log(`[Sync] Authenticator linked to User: ${user.email}`);
         }
 
-        // 3. Handle Blockchain Certificate (JSON-LD Link with Duplicate Check)
+        // 3. Handle Blockchain Certificate
         if (blockchainId || content) {
-            // DUPLICATE PREVENTION: Check if this user already has this blockchainId anchored
+            // Check for duplicate by decrypting existing records for THIS user
             if (blockchainId) {
                 const existingCerts = await (prisma as any).blockchainCertificate.findMany({
                     where: { userId: user.id }
@@ -81,13 +84,10 @@ export const syncIdentity = async (req: Request, res: Response) => {
                     try {
                         const decryptedId = decryptSecret(cert.blockchainId);
                         return decryptedId === blockchainId;
-                    } catch (e) {
-                        return false;
-                    }
+                    } catch (e) { return false; }
                 });
 
                 if (isDuplicate) {
-                    console.log(`[Sync] Conflict: Certificate ${blockchainId} already anchored for ${emailToUse}`);
                     return res.status(409).json({ error: 'Certificate Already Anchored' });
                 }
             }
@@ -100,7 +100,7 @@ export const syncIdentity = async (req: Request, res: Response) => {
                     content: content || JSON.stringify({ id: blockchainId }),
                 },
             });
-            console.log(`[Sync] Certificate linked to primary identity: ${emailToUse}`);
+            console.log(`[Sync] Certificate linked to User: ${user.email}`);
         }
 
         res.status(200).json({
