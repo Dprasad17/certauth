@@ -112,3 +112,41 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ error: 'Identity vault sync interrupted' });
     }
 };
+
+/**
+ * Retrieves the full vault (Authenticators + Certificates) for a user.
+ * GET /api/identity/vault/:email
+ */
+export const getVault = async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized: User context missing' });
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                authenticators: {
+                    orderBy: { createdAt: 'desc' }
+                },
+                certificates: {
+                    orderBy: { createdAt: 'desc' }
+                }
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'Vault Not Found: Identity mismatch' });
+        }
+
+        res.status(200).json({
+            authenticators: user.authenticators,
+            certificates: user.certificates
+        });
+    } catch (error) {
+        console.error('[Vault Fetch] Fatal Error:', error);
+        res.status(500).json({ error: 'Failed to retrieve secure vault' });
+    }
+};
