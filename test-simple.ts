@@ -10,6 +10,7 @@ async function main() {
             update: {},
             create: {
                 email: 'simple-test@example.com',
+                password: 'test-password-hash',
                 authenticators: {
                     create: {
                         secret: 'test-secret',

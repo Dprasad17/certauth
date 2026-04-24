@@ -20,6 +20,7 @@ async function main() {
             update: {},
             create: {
                 email: testEmail,
+                password: 'test-password-hash',
                 certificates: {
                     create: {
                         blockchainId: encrypted,
