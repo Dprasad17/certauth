@@ -1,6 +1,20 @@
 import CryptoJS from 'crypto-js';
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default_key_32_characters_long_!!';
+let _cachedKey: string | null = null;
+
+const getEncryptionKey = (): string => {
+    if (_cachedKey) return _cachedKey;
+    
+    const key = process.env.ENCRYPTION_KEY;
+    if (key) {
+        console.log(`[Security] Production key detected (Length: ${key.length})`);
+        _cachedKey = key;
+        return key;
+    }
+    
+    console.warn('[Security] WARNING: Using fallback encryption key. Data will be insecure!');
+    return 'default_key_32_characters_long_!!';
+};
 
 /**
  * Encrypts a string using AES-256.
@@ -8,7 +22,7 @@ const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default_key_32_characters_
  * @returns The base64 encoded encrypted string.
  */
 export const encryptSecret = (data: string): string => {
-    return CryptoJS.AES.encrypt(data, ENCRYPTION_KEY).toString();
+    return CryptoJS.AES.encrypt(data, getEncryptionKey()).toString();
 };
 
 /**
@@ -17,6 +31,6 @@ export const encryptSecret = (data: string): string => {
  * @returns The decrypted string.
  */
 export const decryptSecret = (encryptedData: string): string => {
-    const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
+    const bytes = CryptoJS.AES.decrypt(encryptedData, getEncryptionKey());
     return bytes.toString(CryptoJS.enc.Utf8);
 };
