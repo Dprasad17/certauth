@@ -16,7 +16,7 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
         issuer
     } = req.body;
 
-    // The userId is now provided by the authenticateToken middleware
+    // The userId is provided by the authenticateToken middleware
     const userId = req.user?.id;
 
     if (!userId) {
@@ -30,7 +30,7 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
     }
 
     try {
-        // 1. Verify User Exists (should always be true if JWT is valid)
+        // 1. Verify User Exists
         const user = await prisma.user.findUnique({
             where: { id: userId },
         });
@@ -39,7 +39,7 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // 2. Handle TOTP Authenticator
+        // 2. Handle TOTP Authenticator (WITH ENCRYPTION PATCH)
         if (totpSecret) {
             let finalIssuer = issuer;
             if ((!finalIssuer || finalIssuer === 'Unknown') && req.body.uri) {
@@ -47,6 +47,9 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
                     req.body.uri.match(/totp\/([^:]+):/)?.[1] ||
                     'Digital Identity';
             }
+
+            // --- SECURITY FIX: Encrypt the secret before database entry ---
+            const encryptedTotpSecret = encryptSecret(totpSecret);
 
             await (prisma as any).authenticator.upsert({
                 where: {
@@ -56,19 +59,19 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
                     }
                 },
                 update: {
-                    secret: totpSecret,
+                    secret: encryptedTotpSecret, // Save encrypted
                     label: label || finalIssuer,
                     uri: req.body.uri || '',
                 },
                 create: {
                     user: { connect: { id: user.id } },
-                    secret: totpSecret,
+                    secret: encryptedTotpSecret, // Save encrypted
                     label: label || finalIssuer,
                     issuer: finalIssuer,
                     uri: req.body.uri || '',
                 },
             });
-            console.log(`[Sync] Authenticator linked to User: ${user.email}`);
+            console.log(`[Sync] Authenticator linked & encrypted for User: ${user.email}`);
         }
 
         // 3. Handle Blockchain Certificate
@@ -82,6 +85,7 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
                 const isDuplicate = existingCerts.some((cert: any) => {
                     if (!cert.blockchainId) return false;
                     try {
+                        // Decrypting stored ID to compare with incoming ID
                         const decryptedId = decryptSecret(cert.blockchainId);
                         return decryptedId === blockchainId;
                     } catch (e) { return false; }
@@ -100,7 +104,7 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
                     content: content || JSON.stringify({ id: blockchainId }),
                 },
             });
-            console.log(`[Sync] Certificate linked to User: ${user.email}`);
+            console.log(`[Sync] Certificate linked & encrypted for User: ${user.email}`);
         }
 
         res.status(200).json({
@@ -141,6 +145,8 @@ export const getVault = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ error: 'Vault Not Found: Identity mismatch' });
         }
 
+        // Note: Decryption happens on the Mobile Client side in your current architecture
+        // The backend sends the encrypted strings, and the phone decrypts using the same key.
         res.status(200).json({
             authenticators: user.authenticators,
             certificates: user.certificates
