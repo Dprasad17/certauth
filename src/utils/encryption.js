@@ -1,36 +1,34 @@
-import CryptoJS from 'crypto-js';
+import crypto from 'crypto';
 
-const getEncryptionKey = () => {
-    return process.env.ENCRYPTION_KEY || 'default_key_32_characters_long_!!';
-};
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6';
+const STATIC_IV = '3141592653589793';
 
-// --- Security Configuration (Synchronized with Frontend) ---
-// We use a static IV for the vault to ensure cross-platform compatibility 
-// between Node.js and React Native's CryptoJS.
-const STATIC_IV = CryptoJS.enc.Utf8.parse('3141592653589793'); // 16-byte IV
-
-/**
- * Encrypts a string using AES-256-CBC with a raw key.
- */
 export const encryptSecret = (data) => {
-    const key = CryptoJS.enc.Utf8.parse(getEncryptionKey());
-    const encrypted = CryptoJS.AES.encrypt(data, key, {
-        iv: STATIC_IV,
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7
-    });
-    return encrypted.toString();
+    try {
+        const key = Buffer.from(ENCRYPTION_KEY, 'utf8');
+        const iv = Buffer.from(STATIC_IV, 'utf8');
+        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+        
+        let encrypted = cipher.update(data, 'utf8', 'base64');
+        encrypted += cipher.final('base64');
+        return encrypted;
+    } catch (error) {
+        console.error('[Encryption] Fatal Error:', error);
+        return data;
+    }
 };
 
-/**
- * Decrypts an AES-256-CBC encrypted string.
- */
 export const decryptSecret = (encryptedData) => {
-    const key = CryptoJS.enc.Utf8.parse(getEncryptionKey());
-    const bytes = CryptoJS.AES.decrypt(encryptedData, key, {
-        iv: STATIC_IV,
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7
-    });
-    return bytes.toString(CryptoJS.enc.Utf8);
+    try {
+        const key = Buffer.from(ENCRYPTION_KEY, 'utf8');
+        const iv = Buffer.from(STATIC_IV, 'utf8');
+        const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+        
+        let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
+        decrypted += decipher.final('utf8');
+        return decrypted;
+    } catch (error) {
+        console.error('[Decryption] Fatal Error:', error);
+        return '';
+    }
 };
