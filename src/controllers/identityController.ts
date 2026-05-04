@@ -48,8 +48,9 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
                     'Digital Identity';
             }
 
-            // --- SECURITY FIX: Encrypt the secret before database entry ---
+            // --- SECURITY FIX: Encrypt the secret AND URI before database entry ---
             const encryptedTotpSecret = encryptSecret(totpSecret);
+            const encryptedUri = req.body.uri ? encryptSecret(req.body.uri) : '';
 
             await (prisma as any).authenticator.upsert({
                 where: {
@@ -61,14 +62,14 @@ export const syncIdentity = async (req: AuthRequest, res: Response) => {
                 update: {
                     secret: encryptedTotpSecret, // Save encrypted
                     label: label || finalIssuer,
-                    uri: req.body.uri || '',
+                    uri: encryptedUri, // Save encrypted
                 },
                 create: {
                     user: { connect: { id: user.id } },
                     secret: encryptedTotpSecret, // Save encrypted
                     label: label || finalIssuer,
                     issuer: finalIssuer,
-                    uri: req.body.uri || '',
+                    uri: encryptedUri, // Save encrypted
                 },
             });
             console.log(`[Sync] Authenticator linked & encrypted for User: ${user.email}`);
