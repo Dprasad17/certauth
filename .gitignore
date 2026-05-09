@@ -1,6 +1,44 @@
-node_modules
-.env
-dist
-*.db
+# Root .gitignore for CertAuth Monorepo
+
+# Node.js
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment Secrets
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Android (React Native)
+**/android/build/
+**/android/.gradle/
+**/android/app/build/
+**/android/.cxx/
+*.keystore
+!**/android/app/debug.keystore
+
+# iOS (React Native)
+**/ios/build/
+**/ios/Pods/
+**/ios/DerivedData/
+*.ipa
+*.xcuserstate
+
+# Logs and databases
 *.log
+*.db
+*.db-journal
+
+# IDEs and OS
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts
+**/dist/
+**/build/
