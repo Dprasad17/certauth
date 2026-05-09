@@ -69,7 +69,7 @@ CertAuth/
 
 **Durga Prasad A** is a 20-year-old Full-Stack Developer specializing in **React Native** and **Machine Learning**. With a passion for building secure, outcome-driven engineering solutions, Durga focuses on creating applications that bridge the gap between complex cryptography and intuitive user experiences.
 
-- **Focus Areas**: Mobile Security, Edge Computing, Synthetic Fraud Detection.
+- **Focus Areas**: Mobile app developement , Machine learning , AI , Data Analytics
 - **Contact**: durgacit1704@gmail.com
 
 ---
