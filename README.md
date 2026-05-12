@@ -61,7 +61,7 @@ CertAuth/
 ## 🌐 Project Links
 
 - **Backend API**: [https://certauth-backend.onrender.com](https://certauth-backend.onrender.com) 
-- **GitHub Repository**: [https://github.com/Dprasad17/certauth-backend](https://github.com/Dprasad17/certauth-backend)
+  
 
 ---
 
