@@ -75,7 +75,7 @@ CertAuth/
 
 ## 👨‍💻 About the Developer
 
-** IAM Durga Prasad A**  a 20-year-old Full-Stack Developer specializing in **React Native** and **Machine Learning**. With a passion for building secure, outcome-driven engineering solutions, Dur focusing on creating applications that bridge the gap between complex cryptography and intuitive user experiences.
+ IAM Durga Prasad A  a 20-year-old Full-Stack Developer specializing in **React Native** and **Machine Learning**. With a passion for building secure, outcome-driven engineering solutions, Dur focusing on creating applications that bridge the gap between complex cryptography and intuitive user experiences.
 
 - **Focus Areas**: Mobile app developement, Machine learning, AI, Data Analytics
 - **Contact**: durgacit1704@gmail.com
