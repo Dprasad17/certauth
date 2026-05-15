@@ -65,7 +65,7 @@ CertAuth/
 
 **Live Backend API**
 - URL: [https://certauth-backend.onrender.com](https://certauth-backend.onrender.com)
-- Status: ![Uptime](https://img.shields.io/uptime-robot/status/m792683930-6b6f7f6f6f6f6f6f6f6f6f6f) (Placeholder)
+
 
 **Production Android APK**
 - Latest Release: [Download CertAuth APK](https://github.com/Dprasad17/certauth-backend/releases/latest)
