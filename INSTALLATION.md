@@ -18,8 +18,8 @@ Before starting, ensure you have the following installed:
 ### 1. Clone the Repository
 Open PowerShell or CMD and run:
 ```powershell
-git clone https://github.com/Dprasad17/certauth-backend.git
-cd certauth-backend
+git clone https://github.com/Dprasad17/certauth.git
+cd certauth
 ```
 
 ### 2. Backend Configuration
